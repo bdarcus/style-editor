@@ -20,7 +20,20 @@
       ]
     },
     "bibliography": {
-      "template": []
+      "template": [
+        {
+          "contributor": "author",
+          "form": "long"
+        },
+        {
+          "date": "issued",
+          "form": "year"
+        },
+        {
+          "title": "primary",
+          "form": "long"
+        }
+      ]
     }
   },
   "references": [
