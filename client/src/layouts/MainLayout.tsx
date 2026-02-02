@@ -34,16 +34,18 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                         </div>
                         {/* Search & Actions */}
                         <div className="flex items-center gap-4">
-                            <div className="hidden sm:flex relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span className="material-symbols-outlined text-text-secondary text-[20px]">search</span>
+                            {location.pathname !== '/' && (
+                                <div className="hidden sm:flex relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span className="material-symbols-outlined text-text-secondary text-[20px]">search</span>
+                                    </div>
+                                    <input
+                                        className="block w-full rounded-lg border-none bg-background-light py-2 pl-10 pr-3 text-sm placeholder:text-text-secondary focus:ring-2 focus:ring-primary focus:bg-white transition-all w-64"
+                                        placeholder="Search styles..."
+                                        type="text"
+                                    />
                                 </div>
-                                <input
-                                    className="block w-full rounded-lg border-none bg-background-light py-2 pl-10 pr-3 text-sm placeholder:text-text-secondary focus:ring-2 focus:ring-primary focus:bg-white transition-all w-64"
-                                    placeholder="Search styles..."
-                                    type="text"
-                                />
-                            </div>
+                            )}
                             <button className="bg-primary text-white text-sm font-bold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200">
                                 Log In
                             </button>
