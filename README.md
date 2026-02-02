@@ -1,6 +1,6 @@
 # Style Editor
 
-A web-based style editor for modifying and creating citation styles, designed to work in lockstep with the CSL Next ecosystem.
+A web-based style editor for finding, accessing, modifying and creating citation styles, designed to work in lockstep with the CSL Next ecosystem.
 
 ## Project Structure
 
