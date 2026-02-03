@@ -2,18 +2,21 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
 pub struct NameOptions {
     pub form: NameForm,
     pub et_al: Option<EtAlConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
 pub enum NameForm {
     Long,
     Short,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
 pub struct EtAlConfig {
     pub min: u8,
     pub use_first: u8,
@@ -23,6 +26,7 @@ pub struct EtAlConfig {
 /// This struct captures the state of the "Decision Wizard" and is used
 /// to generate the next set of questions or the final CSL style.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "snake_case")]
 pub struct StyleIntent {
     /// The starting point or template (e.g., "apa", "chicago").
     pub base_archetype: Option<String>,
@@ -55,24 +59,24 @@ impl StyleIntent {
                     Preview {
                         label: "Parenthetical (Author-Date)".to_string(),
                         html: "<div class='preview'>(Doe 2023)</div>".to_string(),
-                        choice_value: serde_json::json!({ "class": "InText" }),
+                        choice_value: serde_json::json!({ "class": "in-text" }),
                     },
                     Preview {
                         label: "Numeric (Vancouver)".to_string(),
                         html: "<div class='preview'>[1]</div>".to_string(),
-                        choice_value: serde_json::json!({ "class": "Numeric" }),
+                        choice_value: serde_json::json!({ "class": "numeric" }),
                     },
                     Preview {
                         label: "Notes (Chicago)".to_string(),
                         html: "<div class='preview'><sup>1</sup></div>".to_string(),
-                        choice_value: serde_json::json!({ "class": "Note" }),
+                        choice_value: serde_json::json!({ "class": "note" }),
                     },
                 ]
             )
         } else if self.author_format.is_none() {
             (
                 Some(Question {
-                    id: "author_format".to_string(),
+                    id: "author-format".to_string(),
                     text: "How should multiple authors be displayed?".to_string(),
                     description: Some("Choose how you want to handle author lists in citations.".to_string()),
                 }),
@@ -81,14 +85,14 @@ impl StyleIntent {
                         label: "Full List".to_string(),
                         html: "<div class='preview'>(Doe, Smith, & Jones, 2023)</div>".to_string(),
                         choice_value: serde_json::json!({ 
-                            "author_format": { "form": "Long", "et_al": null } 
+                            "author-format": { "form": "long", "et-al": null } 
                         }),
                     },
                     Preview {
                         label: "Abbreviated (Et Al. after 3)".to_string(),
                         html: "<div class='preview'>(Doe et al., 2023)</div>".to_string(),
                         choice_value: serde_json::json!({ 
-                            "author_format": { "form": "Long", "et_al": { "min": 3, "use_first": 1 } } 
+                            "author-format": { "form": "long", "et-al": { "min": 3, "use-first": 1 } } 
                         }),
                     },
                 ]
@@ -96,7 +100,7 @@ impl StyleIntent {
         } else if self.has_bibliography.is_none() {
             (
                 Some(Question {
-                    id: "has_bibliography".to_string(),
+                    id: "has-bibliography".to_string(),
                     text: "Do you need a bibliography at the end?".to_string(),
                     description: Some("Most academic styles require a list of references at the end of the document.".to_string()),
                 }),
@@ -104,12 +108,12 @@ impl StyleIntent {
                     Preview {
                         label: "Yes, include bibliography".to_string(),
                         html: "<div class='preview'><b>Bibliography</b><br/>Doe, J. (2023). Title...</div>".to_string(),
-                        choice_value: serde_json::json!({ "has_bibliography": true }),
+                        choice_value: serde_json::json!({ "has-bibliography": true }),
                     },
                     Preview {
                         label: "No bibliography".to_string(),
                         html: "<div class='preview'><i>Just the citations.</i></div>".to_string(),
-                        choice_value: serde_json::json!({ "has_bibliography": false }),
+                        choice_value: serde_json::json!({ "has-bibliography": false }),
                     },
                 ]
             )
@@ -274,7 +278,7 @@ mod intent_tests {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-
+#[serde(rename_all = "snake_case")]
 pub enum CitationClass {
     InText,
     Note,

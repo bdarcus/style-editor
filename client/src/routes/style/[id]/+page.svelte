@@ -101,32 +101,36 @@
         // Minimal CSLN definitions for previews
         if (id === 'apa') {
             return {
+                version: "",
                 info: { title: 'APA' },
-                citation: { "use-preset": "apa" },
-                bibliography: { "use-preset": "apa" }
+                citation: { "use_preset": "apa" },
+                bibliography: { "use_preset": "apa" }
             };
         }
         if (id === 'nature') {
             // Nature is numeric. Using IEEE as proxy for now as CSLN core might not have Nature specific preset yet.
             // Or maybe it does? The user code for csln_core had Ieee, Vancouver.
             return {
+                version: "",
                 info: { title: 'Nature' },
-                citation: { "use-preset": "ieee" },
-                bibliography: { "use-preset": "ieee" }
+                citation: { "use_preset": "ieee" },
+                bibliography: { "use_preset": "ieee" }
             };
         }
         if (id === 'chicago') {
             return {
+                version: "",
                 info: { title: 'Chicago' },
-                citation: { "use-preset": "chicago-author-date" },
-                bibliography: { "use-preset": "chicago-author-date" }
+                citation: { "use_preset": "chicago-author-date" },
+                bibliography: { "use_preset": "chicago-author-date" }
             };
         }
         // Default fallthrough
         return {
+            version: "",
             info: { title: 'Unknown' },
-            citation: { "use-preset": "apa" },
-            bibliography: { "use-preset": "apa" }
+            citation: { "use_preset": "apa" },
+            bibliography: { "use_preset": "apa" }
         };
     }
 
