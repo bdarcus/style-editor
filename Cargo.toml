@@ -1,3 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["server"]
+members = [
+    "server/crates/api",
+    "server/crates/intent-engine",
+]
