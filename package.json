@@ -1,0 +1,14 @@
+{
+    "name": "style-editor",
+    "private": true,
+    "scripts": {
+        "dev:client": "npm --prefix client run dev",
+        "dev:server": "cargo run -p style-editor-api",
+        "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+        "build": "npm --prefix client run build && cargo build --release",
+        "check": "npm --prefix client run check && cargo check --workspace"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
