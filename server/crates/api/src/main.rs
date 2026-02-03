@@ -39,13 +39,25 @@ async fn main() {
     
     println!("Loading references from: {}", ref_path);
 
-    let f = std::fs::File::open(ref_path).expect("Failed to open comprehensive.yaml references");
-    let mut references: HashMap<String, Reference> = serde_yaml::from_reader(f).expect("Failed to parse comprehensive.yaml");
-    
-    // Ensure each reference has its ID set from the map key
-    for (id, reference) in references.iter_mut() {
-        reference.set_id(id.clone());
-    }
+    let references: HashMap<String, Reference> = match std::fs::File::open(ref_path) {
+        Ok(f) => match serde_yaml::from_reader::<_, HashMap<String, Reference>>(f) {
+            Ok(mut refs) => {
+                // Ensure each reference has its ID set from the map key
+                for (id, reference) in refs.iter_mut() {
+                    reference.set_id(id.clone());
+                }
+                refs
+            },
+            Err(e) => {
+                println!("Failed to parse comprehensive.yaml: {}", e);
+                HashMap::new()
+            }
+        },
+        Err(e) => {
+            println!("Failed to open comprehensive.yaml: {}", e);
+            HashMap::new()
+        }
+    };
 
     let state = Arc::new(AppState {
         references: references.clone()
@@ -56,7 +68,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(health_check))
         .route("/version", get(version))
-        .route("/references", get(get_references))
+        .route("/api/references", get(get_references))
         .route("/preview/citation", post(preview_citation))
         .route("/preview/bibliography", post(preview_bibliography))
         .route("/api/v1/decide", post(decide_handler))
@@ -64,7 +76,7 @@ async fn main() {
         .with_state(state)
         .layer(tower_http::cors::CorsLayer::permissive());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on {}", addr);
     
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
@@ -191,7 +203,8 @@ async fn decide_handler(
         cite_ids = bib.keys().take(3).cloned().collect();
     }
 
-    if !cite_ids.is_empty() {
+    // Only run processor if a class is selected to avoid panics on empty style
+    if intent.class.is_some() && !cite_ids.is_empty() {
         let processor = Processor::new(style, bib);
         let citation = Citation {
             id: Some("preview-1".to_string()),

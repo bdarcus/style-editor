@@ -48,7 +48,7 @@
 
     onMount(async () => {
         try {
-            const res = await fetch('/references');
+            const res = await fetch('/api/references');
             const data = await res.json();
             const refList = Object.entries(data).map(([id, ref]: [string, any]) => ({ ...ref, id }));
             
