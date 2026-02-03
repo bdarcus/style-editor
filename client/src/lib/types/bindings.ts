@@ -6,11 +6,15 @@
  * This struct captures the state of the "Decision Wizard" and is used
  * to generate the next set of questions or the final CSL style.
  */
-export type StyleIntent = { base_archetype: string | null; class: CitationClass | null; author_format: NameFormat | null; has_bibliography: boolean | null };
+export type StyleIntent = { base_archetype: string | null; class: CitationClass | null; author_format: NameOptions | null; has_bibliography: boolean | null };
 
 export type CitationClass = "InText" | "Note" | "Numeric";
 
-export type NameFormat = "Long" | "Short" | "EtAl";
+export type NameOptions = { form: NameForm; et_al: EtAlConfig | null };
+
+export type NameForm = "Long" | "Short";
+
+export type EtAlConfig = { min: number; use_first: number };
 
 /**
  * A package returned by the backend containing everything the frontend

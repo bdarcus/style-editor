@@ -40,7 +40,12 @@ async fn main() {
     println!("Loading references from: {}", ref_path);
 
     let f = std::fs::File::open(ref_path).expect("Failed to open comprehensive.yaml references");
-    let references: HashMap<String, Reference> = serde_yaml::from_reader(f).expect("Failed to parse comprehensive.yaml");
+    let mut references: HashMap<String, Reference> = serde_yaml::from_reader(f).expect("Failed to parse comprehensive.yaml");
+    
+    // Ensure each reference has its ID set from the map key
+    for (id, reference) in references.iter_mut() {
+        reference.set_id(Some(id.clone()));
+    }
 
     let state = Arc::new(AppState {
         references: references.clone()
@@ -51,6 +56,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(health_check))
         .route("/version", get(version))
+        .route("/references", get(get_references))
         .route("/preview/citation", post(preview_citation))
         .route("/preview/bibliography", post(preview_bibliography))
         .route("/api/v1/decide", post(decide_handler))
@@ -74,6 +80,10 @@ async fn version() -> Json<Value> {
         "service": "style-editor-server",
         "csln_core_version": "git-latest"
     }))
+}
+
+async fn get_references(State(state): State<Arc<AppState>>) -> Json<HashMap<String, Reference>> {
+    Json(state.references.clone())
 }
 
 #[derive(Deserialize)]
