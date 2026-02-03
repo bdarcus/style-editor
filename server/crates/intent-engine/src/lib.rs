@@ -85,14 +85,14 @@ impl StyleIntent {
                         label: "Full List".to_string(),
                         html: "<div class='preview'>(Doe, Smith, & Jones, 2023)</div>".to_string(),
                         choice_value: serde_json::json!({ 
-                            "author-format": { "form": "long", "et-al": null } 
+                            "author-format": { "form": "long", "et_al": null } 
                         }),
                     },
                     Preview {
                         label: "Abbreviated (Et Al. after 3)".to_string(),
                         html: "<div class='preview'>(Doe et al., 2023)</div>".to_string(),
                         choice_value: serde_json::json!({ 
-                            "author-format": { "form": "long", "et-al": { "min": 3, "use-first": 1 } } 
+                            "author-format": { "form": "long", "et_al": { "min": 3, "use-first": 1 } } 
                         }),
                     },
                 ]

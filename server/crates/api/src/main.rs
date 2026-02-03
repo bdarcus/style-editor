@@ -44,7 +44,7 @@ async fn main() {
     
     // Ensure each reference has its ID set from the map key
     for (id, reference) in references.iter_mut() {
-        reference.set_id(Some(id.clone()));
+        reference.set_id(id.clone());
     }
 
     let state = Arc::new(AppState {
@@ -98,6 +98,7 @@ struct PreviewResponse {
 }
 
 async fn preview_citation(Json(payload): Json<PreviewRequest>) -> Json<PreviewResponse> {
+    println!("Handling preview_citation request");
     // 1. Convert Vec<Reference> to Bibliography (IndexMap)
     let bib: Bibliography = payload.references
         .into_iter()
@@ -120,13 +121,17 @@ async fn preview_citation(Json(payload): Json<PreviewRequest>) -> Json<PreviewRe
     // 5. Render
     let result = match processor.process_citation(&citation) {
         Ok(res) => res,
-        Err(e) => format!("Error: {}", e),
+        Err(e) => {
+            println!("preview_citation error: {}", e);
+            format!("Error: {}", e)
+        },
     };
 
     Json(PreviewResponse { result })
 }
 
 async fn preview_bibliography(Json(payload): Json<PreviewRequest>) -> Json<PreviewResponse> {
+    println!("Handling preview_bibliography request");
     let bib: Bibliography = payload.references
         .into_iter()
         .map(|r| (r.id().clone().unwrap_or_default(), r))
@@ -157,11 +162,13 @@ async fn decide_handler(
     State(state): State<Arc<AppState>>,
     Json(intent): Json<StyleIntent>
 ) -> Json<DecisionPackage> {
+    println!("Handling decide request: {:?}", intent);
     // Call the engine to determine the next decision based on current intent
     let mut package = intent.decide();
 
     // Generate real preview using the processor
     let style = intent.to_style();
+    println!("Generated style: {:?}", style);
     
     // Convert HashMap to Bibliography (IndexMap)
     let bib: Bibliography = state.references.iter()
@@ -192,8 +199,11 @@ async fn decide_handler(
             ..Default::default()
         };
 
+        println!("Processing citation for {} items", citation.items.len());
+
         match processor.process_citation(&citation) {
             Ok(res) => {
+                println!("Preview result: {}", res);
                 if !res.trim().is_empty() {
                     let mut html = format!("<div class='live-preview-content'><div class='preview-citation'>{}</div>", res);
                     
