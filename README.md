@@ -1,4 +1,4 @@
-# CSLN Style Repo
+# CSLN Style Hub
 
 A modern repository to quickly find, edit, and create CSLN Citation Styles. Developed in lockstep with that broader ecosystem!
 
