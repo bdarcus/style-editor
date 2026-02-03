@@ -155,8 +155,31 @@ impl StyleIntent {
         };
 
         if let Some(p) = preset {
+             let wrap = match self.class {
+                 Some(CitationClass::InText) => Some(csln_core::template::WrapPunctuation::Parentheses),
+                 Some(CitationClass::Numeric) => Some(csln_core::template::WrapPunctuation::Brackets),
+                 _ => None,
+             };
+
+             let options = match self.author_format {
+                 Some(NameFormat::EtAl) => Some(csln_core::options::Config {
+                     contributors: Some(csln_core::options::ContributorConfig {
+                         shorten: Some(csln_core::options::ShortenListOptions {
+                             min: 3,
+                             use_first: 1,
+                             ..Default::default()
+                         }),
+                         ..Default::default()
+                     }),
+                     ..Default::default()
+                 }),
+                 _ => None,
+             };
+
              style.citation = Some(csln_core::CitationSpec {
                  use_preset: Some(p.clone()),
+                 wrap,
+                 options,
                  ..Default::default()
              });
              
@@ -199,6 +222,24 @@ mod intent_tests {
         assert!(style.citation.is_some());
         let spec = style.citation.unwrap();
         assert_eq!(spec.use_preset, Some(csln_core::TemplatePreset::Vancouver));
+        assert_eq!(spec.wrap, Some(csln_core::template::WrapPunctuation::Brackets));
+    }
+
+    #[test]
+    fn test_to_style_etal() {
+        let mut intent = StyleIntent::default();
+        intent.class = Some(CitationClass::InText);
+        intent.author_format = Some(NameFormat::EtAl);
+        let style = intent.to_style();
+        
+        let spec = style.citation.unwrap();
+        assert_eq!(spec.wrap, Some(csln_core::template::WrapPunctuation::Parentheses));
+        
+        let opts = spec.options.unwrap();
+        let contribs = opts.contributors.unwrap();
+        let shorten = contribs.shorten.unwrap();
+        assert_eq!(shorten.min, 3);
+        assert_eq!(shorten.use_first, 1);
     }
 }
 
