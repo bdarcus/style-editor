@@ -1,8 +1,8 @@
-# CSL Style Editor
+# CSLN Style Repo
 
-A modern, intent-based editor for Citation Style Language (CSL) files.
+A modern repository to quickly find, edit, and create CSLN Citation Styles. Developed in lockstep with that broader ecosystem!
 
-![Markdown Logo](resouces/img/main.png "Landing Page")
+![Citation Style Editor Preview](resources/img/main.png)
 
 ## Project Structure
 
