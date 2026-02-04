@@ -39,8 +39,25 @@ async fn main() {
     
     println!("Loading references from: {}", ref_path);
 
-    let f = std::fs::File::open(ref_path).expect("Failed to open comprehensive.yaml references");
-    let references: HashMap<String, Reference> = serde_yaml::from_reader(f).expect("Failed to parse comprehensive.yaml");
+    let references: HashMap<String, Reference> = match std::fs::File::open(ref_path) {
+        Ok(f) => match serde_yaml::from_reader::<_, HashMap<String, Reference>>(f) {
+            Ok(mut refs) => {
+                // Ensure each reference has its ID set from the map key
+                for (id, reference) in refs.iter_mut() {
+                    reference.set_id(id.clone());
+                }
+                refs
+            },
+            Err(e) => {
+                println!("Failed to parse comprehensive.yaml: {}", e);
+                HashMap::new()
+            }
+        },
+        Err(e) => {
+            println!("Failed to open comprehensive.yaml: {}", e);
+            HashMap::new()
+        }
+    };
 
     let state = Arc::new(AppState {
         references: references.clone()
@@ -51,6 +68,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(health_check))
         .route("/version", get(version))
+        .route("/api/references", get(get_references))
         .route("/preview/citation", post(preview_citation))
         .route("/preview/bibliography", post(preview_bibliography))
         .route("/api/v1/decide", post(decide_handler))
@@ -58,7 +76,7 @@ async fn main() {
         .with_state(state)
         .layer(tower_http::cors::CorsLayer::permissive());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on {}", addr);
     
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
@@ -76,6 +94,10 @@ async fn version() -> Json<Value> {
     }))
 }
 
+async fn get_references(State(state): State<Arc<AppState>>) -> Json<HashMap<String, Reference>> {
+    Json(state.references.clone())
+}
+
 #[derive(Deserialize)]
 struct PreviewRequest {
     style: Style,
@@ -88,6 +110,7 @@ struct PreviewResponse {
 }
 
 async fn preview_citation(Json(payload): Json<PreviewRequest>) -> Json<PreviewResponse> {
+    println!("Handling preview_citation request");
     // 1. Convert Vec<Reference> to Bibliography (IndexMap)
     let bib: Bibliography = payload.references
         .into_iter()
@@ -110,13 +133,17 @@ async fn preview_citation(Json(payload): Json<PreviewRequest>) -> Json<PreviewRe
     // 5. Render
     let result = match processor.process_citation(&citation) {
         Ok(res) => res,
-        Err(e) => format!("Error: {}", e),
+        Err(e) => {
+            println!("preview_citation error: {}", e);
+            format!("Error: {}", e)
+        },
     };
 
     Json(PreviewResponse { result })
 }
 
 async fn preview_bibliography(Json(payload): Json<PreviewRequest>) -> Json<PreviewResponse> {
+    println!("Handling preview_bibliography request");
     let bib: Bibliography = payload.references
         .into_iter()
         .map(|r| (r.id().clone().unwrap_or_default(), r))
@@ -147,11 +174,13 @@ async fn decide_handler(
     State(state): State<Arc<AppState>>,
     Json(intent): Json<StyleIntent>
 ) -> Json<DecisionPackage> {
+    println!("Handling decide request: {:?}", intent);
     // Call the engine to determine the next decision based on current intent
     let mut package = intent.decide();
 
     // Generate real preview using the processor
     let style = intent.to_style();
+    println!("Generated style: {:?}", style);
     
     // Convert HashMap to Bibliography (IndexMap)
     let bib: Bibliography = state.references.iter()
@@ -162,7 +191,7 @@ async fn decide_handler(
     let mut cite_ids = Vec::new();
     
     // Prioritize specific references that show off style features
-    let candidates = ["vaswani_attention", "foucault_discipline", "aad_atlas_higgs", "brown_v_board"];
+    let candidates = ["vaswani_attention", "foucault_discipline", "brown_v_board"];
     for id in candidates {
         if bib.contains_key(id) {
             cite_ids.push(id.to_string());
@@ -171,10 +200,17 @@ async fn decide_handler(
     
     // Fallback to random ones if none found
     if cite_ids.is_empty() {
-        cite_ids = bib.keys().take(3).cloned().collect();
+        cite_ids = state.references.keys().take(3).cloned().collect();
     }
 
-    if !cite_ids.is_empty() {
+    // Only run processor if a class is selected to avoid panics on empty style
+    if intent.class.is_some() && !cite_ids.is_empty() {
+        // Create a small bibliography containing only the cited references
+        let bib: Bibliography = state.references.iter()
+            .filter(|(k, _)| cite_ids.contains(k))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+
         let processor = Processor::new(style, bib);
         let citation = Citation {
             id: Some("preview-1".to_string()),
@@ -182,8 +218,11 @@ async fn decide_handler(
             ..Default::default()
         };
 
+        println!("Processing citation for {} items", citation.items.len());
+
         match processor.process_citation(&citation) {
             Ok(res) => {
+                println!("Preview result: {}", res);
                 if !res.trim().is_empty() {
                     let mut html = format!("<div class='live-preview-content'><div class='preview-citation'>{}</div>", res);
                     

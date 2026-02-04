@@ -27,7 +27,7 @@
             <nav class="flex items-center gap-9">
                 <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="/">Browse</a>
                 <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="/create-wizard">Wizard</a>
-                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">Docs</a>
+                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="/">Docs</a>
             </nav>
             <div class="flex gap-2">
                 <button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-slate-200 hover:bg-slate-300 text-slate-900 text-sm font-bold transition-colors">
@@ -62,12 +62,12 @@
                     <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">Platform</h4>
                     <a class="text-sm text-slate-500 hover:text-primary" href="/">Browse</a>
                     <a class="text-sm text-slate-500 hover:text-primary" href="/create-wizard">Wizard</a>
-                    <a class="text-sm text-slate-500 hover:text-primary" href="#">API</a>
+                    <a class="text-sm text-slate-500 hover:text-primary" href="/">API</a>
                 </div>
                 <div class="flex flex-col gap-4">
                     <h4 class="text-xs font-black text-slate-900 uppercase tracking-widest">Help</h4>
-                    <a class="text-sm text-slate-500 hover:text-primary" href="#">Docs</a>
-                    <a class="text-sm text-slate-500 hover:text-primary" href="#">Forum</a>
+                    <a class="text-sm text-slate-500 hover:text-primary" href="/">Docs</a>
+                    <a class="text-sm text-slate-500 hover:text-primary" href="/">Forum</a>
                 </div>
             </div>
         </div>

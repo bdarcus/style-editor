@@ -1,17 +1,39 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub struct NameOptions {
+    pub form: NameForm,
+    pub et_al: Option<EtAlConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum NameForm {
+    Long,
+    Short,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub struct EtAlConfig {
+    pub min: u8,
+    pub use_first: u8,
+}
+
 /// Represents the user's intent for the citation style they are building.
 /// This struct captures the state of the "Decision Wizard" and is used
 /// to generate the next set of questions or the final CSL style.
 #[derive(Debug, Clone, Serialize, Deserialize, Default, Type)]
+#[serde(rename_all = "snake_case")]
 pub struct StyleIntent {
     /// The starting point or template (e.g., "apa", "chicago").
     pub base_archetype: Option<String>,
     /// The general class of citation (in-text, note, etc.).
     pub class: Option<CitationClass>,
-    /// How author names should be formatted (long, short, et al.).
-    pub author_format: Option<NameFormat>,
+    /// Detailed name and et-al options.
+    pub author_format: Option<NameOptions>,
     /// Whether the style requires a bibliography.
     pub has_bibliography: Option<bool>,
 }
@@ -37,17 +59,17 @@ impl StyleIntent {
                     Preview {
                         label: "Parenthetical (Author-Date)".to_string(),
                         html: "<div class='preview'>(Doe 2023)</div>".to_string(),
-                        choice_value: serde_json::json!({ "class": "InText" }),
+                        choice_value: serde_json::json!({ "class": "in_text" }),
                     },
                     Preview {
                         label: "Numeric (Vancouver)".to_string(),
                         html: "<div class='preview'>[1]</div>".to_string(),
-                        choice_value: serde_json::json!({ "class": "Numeric" }),
+                        choice_value: serde_json::json!({ "class": "numeric" }),
                     },
                     Preview {
                         label: "Notes (Chicago)".to_string(),
                         html: "<div class='preview'><sup>1</sup></div>".to_string(),
-                        choice_value: serde_json::json!({ "class": "Note" }),
+                        choice_value: serde_json::json!({ "class": "note" }),
                     },
                 ]
             )
@@ -62,12 +84,16 @@ impl StyleIntent {
                     Preview {
                         label: "Full List".to_string(),
                         html: "<div class='preview'>(Doe, Smith, & Jones, 2023)</div>".to_string(),
-                        choice_value: serde_json::json!({ "author_format": "Long" }),
+                        choice_value: serde_json::json!({ 
+                            "author_format": { "form": "long", "et_al": null } 
+                        }),
                     },
                     Preview {
-                        label: "Abbreviated (Et Al.)".to_string(),
+                        label: "Abbreviated (Et Al. after 3)".to_string(),
                         html: "<div class='preview'>(Doe et al., 2023)</div>".to_string(),
-                        choice_value: serde_json::json!({ "author_format": "EtAl" }),
+                        choice_value: serde_json::json!({ 
+                            "author_format": { "form": "long", "et_al": { "min": 3, "use_first": 1 } } 
+                        }),
                     },
                 ]
             )
@@ -111,9 +137,15 @@ impl StyleIntent {
         let citation = match self.class {
             Some(CitationClass::Numeric) => "[1]",
             Some(CitationClass::Note) => "Doe, \"Title,\" 1.",
-            Some(CitationClass::InText) => match self.author_format {
-                Some(NameFormat::EtAl) => "(Doe et al., 2023)",
-                _ => "(Doe, Smith, & Jones, 2023)",
+            Some(CitationClass::InText) => {
+                let has_et_al = self.author_format.as_ref()
+                    .and_then(|f| f.et_al.as_ref())
+                    .is_some();
+                if has_et_al {
+                    "(Doe et al., 2023)"
+                } else {
+                    "(Doe, Smith, & Jones, 2023)"
+                }
             },
             None => "[Select Citation Class]",
         };
@@ -157,24 +189,22 @@ impl StyleIntent {
         if let Some(p) = preset {
              let wrap = match self.class {
                  Some(CitationClass::InText) => Some(csln_core::template::WrapPunctuation::Parentheses),
-                 Some(CitationClass::Numeric) => Some(csln_core::template::WrapPunctuation::Brackets),
                  _ => None,
              };
 
-             let options = match self.author_format {
-                 Some(NameFormat::EtAl) => Some(csln_core::options::Config {
+             let options = self.author_format.as_ref().and_then(|f| {
+                 f.et_al.as_ref().map(|et_al| csln_core::options::Config {
                      contributors: Some(csln_core::options::ContributorConfig {
                          shorten: Some(csln_core::options::ShortenListOptions {
-                             min: 3,
-                             use_first: 1,
+                             min: et_al.min,
+                             use_first: et_al.use_first,
                              ..Default::default()
                          }),
                          ..Default::default()
                      }),
                      ..Default::default()
-                 }),
-                 _ => None,
-             };
+                 })
+             });
 
              style.citation = Some(csln_core::CitationSpec {
                  use_preset: Some(p.clone()),
@@ -222,20 +252,22 @@ mod intent_tests {
         assert!(style.citation.is_some());
         let spec = style.citation.unwrap();
         assert_eq!(spec.use_preset, Some(csln_core::TemplatePreset::Vancouver));
-        assert_eq!(spec.wrap, Some(csln_core::template::WrapPunctuation::Brackets));
     }
 
     #[test]
     fn test_to_style_etal() {
         let mut intent = StyleIntent::default();
         intent.class = Some(CitationClass::InText);
-        intent.author_format = Some(NameFormat::EtAl);
-        let style = intent.to_style();
-        
-        let spec = style.citation.unwrap();
-        assert_eq!(spec.wrap, Some(csln_core::template::WrapPunctuation::Parentheses));
-        
-        let opts = spec.options.unwrap();
+        intent.author_format = Some(NameOptions {
+            form: NameForm::Long,
+            et_al: Some(EtAlConfig { min: 3, use_first: 1 }),
+        });
+                let style = intent.to_style();
+                
+                let spec = style.citation.unwrap();
+                assert_eq!(spec.wrap, Some(csln_core::template::WrapPunctuation::Parentheses));
+                
+                let opts = spec.options.unwrap();
         let contribs = opts.contributors.unwrap();
         let shorten = contribs.shorten.unwrap();
         assert_eq!(shorten.min, 3);
@@ -244,19 +276,11 @@ mod intent_tests {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-
+#[serde(rename_all = "snake_case")]
 pub enum CitationClass {
     InText,
     Note,
     Numeric,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
-
-pub enum NameFormat {
-    Long,
-    Short,
-    EtAl,
 }
 
 /// A package returned by the backend containing everything the frontend
@@ -315,7 +339,11 @@ mod tests {
         out.push_str(";\n\n");
         out.push_str(&ts::export::<CitationClass>(&config).unwrap());
         out.push_str(";\n\n");
-        out.push_str(&ts::export::<NameFormat>(&config).unwrap());
+        out.push_str(&ts::export::<NameOptions>(&config).unwrap());
+        out.push_str(";\n\n");
+        out.push_str(&ts::export::<NameForm>(&config).unwrap());
+        out.push_str(";\n\n");
+        out.push_str(&ts::export::<EtAlConfig>(&config).unwrap());
         out.push_str(";\n\n");
         out.push_str(&ts::export::<DecisionPackage>(&config).unwrap());
         out.push_str(";\n\n");

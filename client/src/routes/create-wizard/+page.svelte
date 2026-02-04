@@ -92,7 +92,9 @@
                     <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">Preview Metadata</p>
                     <div class="flex flex-wrap gap-2">
                         <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-600">CLASS: {$intent.class || 'PENDING'}</span>
-                        <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-600">NAME: {$intent.author_format || 'PENDING'}</span>
+                        <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-600">
+                            NAME: {$intent.author_format ? ($intent.author_format.et_al ? 'ET AL' : $intent.author_format.form) : 'PENDING'}
+                        </span>
                         <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-600">BIB: {$intent.has_bibliography ? 'YES' : 'NO'}</span>
                     </div>
                 </div>

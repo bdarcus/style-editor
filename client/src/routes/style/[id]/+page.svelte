@@ -86,7 +86,7 @@
 
     onMount(async () => {
         try {
-            const res = await fetch('/references');
+            const res = await fetch('/api/references');
             const data = await res.json();
             // Convert map to array
             references = Object.entries(data).map(([id, ref]: [string, any]) => ({ ...ref, id }));
@@ -101,8 +101,9 @@
         // Minimal CSLN definitions for previews
         if (id === 'apa') {
             return {
+                version: "",
                 info: { title: 'APA' },
-                citation: { "use-preset": "apa" },
+                citation: { "use-preset": "apa", "wrap": "parentheses" },
                 bibliography: { "use-preset": "apa" }
             };
         }
@@ -110,6 +111,7 @@
             // Nature is numeric. Using IEEE as proxy for now as CSLN core might not have Nature specific preset yet.
             // Or maybe it does? The user code for csln_core had Ieee, Vancouver.
             return {
+                version: "",
                 info: { title: 'Nature' },
                 citation: { "use-preset": "ieee" },
                 bibliography: { "use-preset": "ieee" }
@@ -117,15 +119,17 @@
         }
         if (id === 'chicago') {
             return {
+                version: "",
                 info: { title: 'Chicago' },
-                citation: { "use-preset": "chicago-author-date" },
+                citation: { "use-preset": "chicago-author-date", "wrap": "parentheses" },
                 bibliography: { "use-preset": "chicago-author-date" }
             };
         }
         // Default fallthrough
         return {
+            version: "",
             info: { title: 'Unknown' },
-            citation: { "use-preset": "apa" },
+            citation: { "use-preset": "apa", "wrap": "parentheses" },
             bibliography: { "use-preset": "apa" }
         };
     }
