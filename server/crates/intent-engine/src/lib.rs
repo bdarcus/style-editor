@@ -187,11 +187,6 @@ impl StyleIntent {
         };
 
         if let Some(p) = preset {
-             let wrap = match self.class {
-                 Some(CitationClass::InText) => Some(csln_core::template::WrapPunctuation::Parentheses),
-                 _ => None,
-             };
-
              let options = self.author_format.as_ref().and_then(|f| {
                  f.et_al.as_ref().map(|et_al| csln_core::options::Config {
                      contributors: Some(csln_core::options::ContributorConfig {
@@ -208,7 +203,6 @@ impl StyleIntent {
 
              style.citation = Some(csln_core::CitationSpec {
                  use_preset: Some(p.clone()),
-                 wrap,
                  options,
                  ..Default::default()
              });
@@ -252,7 +246,6 @@ mod intent_tests {
         assert!(style.citation.is_some());
         let spec = style.citation.unwrap();
         assert_eq!(spec.use_preset, Some(csln_core::TemplatePreset::Vancouver));
-        assert_eq!(spec.wrap, None);
     }
 
     #[test]
@@ -266,8 +259,6 @@ mod intent_tests {
         let style = intent.to_style();
         
         let spec = style.citation.unwrap();
-        assert_eq!(spec.wrap, Some(csln_core::template::WrapPunctuation::Parentheses));
-        
         let opts = spec.options.unwrap();
         let contribs = opts.contributors.unwrap();
         let shorten = contribs.shorten.unwrap();

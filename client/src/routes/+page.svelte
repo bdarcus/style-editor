@@ -40,10 +40,10 @@
     );
 
     function getStyleDefinition(id: string) {
-        if (id === 'apa') return { version: "", info: { title: 'APA' }, citation: { "use-preset": "apa", "wrap": "parentheses" }, bibliography: { "use-preset": "apa" } };
+        if (id === 'apa') return { version: "", info: { title: 'APA' }, citation: { "use-preset": "apa" }, bibliography: { "use-preset": "apa" } };
         if (id === 'nature') return { version: "", info: { title: 'Nature' }, citation: { "use-preset": "ieee" }, bibliography: { "use-preset": "ieee" } };
-        if (id === 'chicago') return { version: "", info: { title: 'Chicago' }, citation: { "use-preset": "chicago-author-date", "wrap": "parentheses" }, bibliography: { "use-preset": "chicago-author-date" } };
-        return { version: "", info: { title: 'Unknown' }, citation: { "use-preset": "apa", "wrap": "parentheses" }, bibliography: { "use-preset": "apa" } };
+        if (id === 'chicago') return { version: "", info: { title: 'Chicago' }, citation: { "use-preset": "chicago-author-date" }, bibliography: { "use-preset": "chicago-author-date" } };
+        return { version: "", info: { title: 'Unknown' }, citation: { "use-preset": "apa" }, bibliography: { "use-preset": "apa" } };
     }
 
     onMount(async () => {
@@ -134,7 +134,7 @@
             <h2 class="text-2xl font-black leading-tight tracking-tight text-slate-900">
                 {searchQuery ? `Search Results (${filteredStyles.length})` : 'Trending Standards'}
             </h2>
-            <a class="text-sm font-bold text-primary hover:text-blue-400" href="#">View all styles</a>
+            <a class="text-sm font-bold text-primary hover:text-blue-400" href="/">View all styles</a>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
