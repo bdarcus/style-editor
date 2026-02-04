@@ -72,6 +72,7 @@ async fn main() {
         .route("/preview/citation", post(preview_citation))
         .route("/preview/bibliography", post(preview_bibliography))
         .route("/api/v1/decide", post(decide_handler))
+        .route("/api/v1/preview", post(preview_set_handler))
         .route("/api/v1/generate", post(generate_handler))
         .with_state(state)
         .layer(tower_http::cors::CorsLayer::permissive());
@@ -164,8 +165,23 @@ async fn preview_bibliography(Json(payload): Json<PreviewRequest>) -> Json<Previ
     Json(PreviewResponse { result })
 }
 
+#[derive(Default, Serialize, Deserialize)]
+struct PreviewSet {
+    in_text: Option<String>,
+    note: Option<String>,
+    bibliography: Option<String>,
+}
+
+async fn preview_set_handler(
+    State(state): State<Arc<AppState>>,
+    Json(intent): Json<StyleIntent>
+) -> Json<PreviewSet> {
+    Json(generate_preview_set(&intent, &state.references))
+}
+
 /// Helper to generate preview HTML for a given intent and references
-fn generate_preview_html(intent: &StyleIntent, references: &HashMap<String, Reference>) -> Option<String> {
+fn generate_preview_set(intent: &StyleIntent, references: &HashMap<String, Reference>) -> PreviewSet {
+    let mut set = PreviewSet::default();
     // Generate real preview using the processor
     let style = intent.to_style();
     println!("Generated style: {:?}", style);
@@ -186,12 +202,10 @@ fn generate_preview_html(intent: &StyleIntent, references: &HashMap<String, Refe
     }
 
     if cite_ids.is_empty() {
-        return None;
+        return set;
     }
 
-    // Only run processor if a class is selected to avoid panics on empty style
-    // Ideally the processor handles this, but for now we play safe
-    if intent.class.is_some() {
+    if let Some(class) = &intent.class {
         // Create a small bibliography containing only the cited references
         let bib: Bibliography = references.iter()
             .filter(|(k, _)| cite_ids.contains(k))
@@ -205,36 +219,29 @@ fn generate_preview_html(intent: &StyleIntent, references: &HashMap<String, Refe
             ..Default::default()
         };
 
-        println!("Processing citation for {} items", citation.items.len());
-
-        match processor.process_citation(&citation) {
-            Ok(res) => {
-                println!("Preview result: {}", res);
-                if !res.trim().is_empty() {
-                    let mut html = format!("<div class='live-preview-content'><div class='preview-citation'>{}</div>", res);
-                    
-                    if intent.has_bibliography.unwrap_or(false) {
-                         let bib_output = processor.process_references();
-                         if !bib_output.bibliography.is_empty() {
-                             html.push_str("<div class='preview-bibliography'><h4>Example Bibliography</h4>");
-                             for entry in bib_output.bibliography {
-                                 let bib_str = csln_processor::citation_to_string(&entry, None, None, None, None);
-                                 html.push_str(&format!("<div class='bib-entry'>{}</div>", bib_str));
-                             }
-                             html.push_str("</div>");
-                         }
-                    }
-                    
-                    html.push_str("</div>");
-                    return Some(html);
+        if let Ok(res) = processor.process_citation(&citation) {
+            if !res.trim().is_empty() {
+                match class {
+                    intent_engine::CitationClass::AuthorDate => set.in_text = Some(res),
+                    intent_engine::CitationClass::Footnote | intent_engine::CitationClass::Endnote => set.note = Some(res),
+                    intent_engine::CitationClass::Numeric => set.in_text = Some(res), 
                 }
-            },
-            Err(e) => {
-                println!("Preview generation error: {}", e);
+            }
+        }
+
+        if intent.has_bibliography.unwrap_or(false) {
+            let bib_output = processor.process_references();
+            if !bib_output.bibliography.is_empty() {
+                let mut bib_html = String::new();
+                for entry in bib_output.bibliography {
+                    let bib_str = csln_processor::citation_to_string(&entry, None, None, None, None);
+                    bib_html.push_str(&format!("<div class='bib-entry'>{}</div>", bib_str));
+                }
+                set.bibliography = Some(bib_html);
             }
         }
     }
-    None
+    set
 }
 
 /// Handler for the `/api/v1/decide` endpoint.
@@ -252,19 +259,15 @@ async fn decide_handler(
     let mut package = intent.decide();
 
     // 1. Generate live preview for the CURRENT intent
-    if let Some(html) = generate_preview_html(&intent, &state.references) {
-        package.preview_html = html;
-    }
+    let current_previews = generate_preview_set(&intent, &state.references);
+    package.in_text_preview = current_previews.in_text;
+    package.note_preview = current_previews.note;
+    package.bibliography_preview = current_previews.bibliography;
 
     // 2. Generate live previews for EACH choice
-    // This allows the user to see exactly what "Numeric" or "Author-Date" looks like
-    // with real data before they click it.
     for preview in &mut package.previews {
-        // Clone the current intent to simulate the choice
         match serde_json::to_value(&intent) {
             Ok(mut intent_val) => {
-                // Merge the choice value into the intent value
-                // This is a simple merge: top-level keys in choice overwrite intent
                 if let Some(obj) = intent_val.as_object_mut() {
                     if let Some(choice_obj) = preview.choice_value.as_object() {
                         for (k, v) in choice_obj {
@@ -273,12 +276,14 @@ async fn decide_handler(
                     }
                 }
 
-                // Deserialize back to StyleIntent
                 if let Ok(temp_intent) = serde_json::from_value::<StyleIntent>(intent_val) {
-                    // Generate preview for this potential future state
-                    if let Some(html) = generate_preview_html(&temp_intent, &state.references) {
-                        preview.html = html;
-                    }
+                    let p_set = generate_preview_set(&temp_intent, &state.references);
+                    // For choices, we still want a single HTML string for the small card preview
+                    let mut html = String::new();
+                    if let Some(it) = p_set.in_text { html.push_str(&format!("<div class='cit'>{}</div>", it)); }
+                    if let Some(nt) = p_set.note { html.push_str(&format!("<div class='cit'>{}</div>", nt)); }
+                    if let Some(bb) = p_set.bibliography { html.push_str(&format!("<div class='bib'>{}</div>", bb)); }
+                    preview.html = html;
                 }
             },
             Err(e) => println!("Error serializing intent: {}", e),
