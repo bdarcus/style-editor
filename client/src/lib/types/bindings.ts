@@ -6,9 +6,9 @@
  * This struct captures the state of the "Decision Wizard" and is used
  * to generate the next set of questions or the final CSL style.
  */
-export type StyleIntent = { base_archetype: string | null; class: CitationClass | null; author_format: NameOptions | null; has_bibliography: boolean | null };
+export type StyleIntent = { base_archetype: string | null; field: string | null; class: CitationClass | null; author_format: NameOptions | null; has_bibliography: boolean | null; citation_preset: string | null; bibliography_preset: string | null; detailed_config: boolean | null };
 
-export type CitationClass = "in_text" | "note" | "numeric";
+export type CitationClass = "author_date" | "footnote" | "endnote" | "numeric";
 
 export type NameOptions = { form: NameForm; et_al: EtAlConfig | null };
 
@@ -20,7 +20,7 @@ export type EtAlConfig = { min: number; use_first: number };
  * A package returned by the backend containing everything the frontend
  * needs to render the next step in the wizard.
  */
-export type DecisionPackage = { missing_fields: string[]; question: Question | null; previews: Preview[]; preview_html: string };
+export type DecisionPackage = { missing_fields: string[]; question: Question | null; previews: Preview[]; in_text_preview: string | null; note_preview: string | null; bibliography_preview: string | null };
 
 export type Question = { id: string; text: string; description: string | null };
 

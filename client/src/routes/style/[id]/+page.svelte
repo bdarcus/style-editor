@@ -4,10 +4,12 @@
     import { goto } from '$app/navigation';
     import { bookmarks, toggleBookmark } from '$lib/stores/bookmarks';
     import { onMount } from 'svelte';
+    import ComprehensivePreview from '$lib/components/ComprehensivePreview.svelte';
 
     // State
     let references = $state<any[]>([]);
     let previews = $state<Record<string, { citation: string, bibliography: string }>>({});
+    let comprehensivePreview = $state<any>(null);
     let selectedCategory = $state('All');
     let loadingReferences = $state(true);
 
@@ -195,12 +197,33 @@
         }
     });
     
-    // Watch styleId separately to clear cache?
+    // Watch styleId separately to clear cache and fetch comprehensive preview
     let lastStyleId = $state(styleId);
     $effect(() => {
         if (styleId !== lastStyleId) {
             previews = {};
+            comprehensivePreview = null;
             lastStyleId = styleId;
+        }
+
+        if (!comprehensivePreview) {
+             const styleDef = getStyleDefinition(styleId);
+             // Approximate intent from style definition for the preview endpoint
+             const mockIntent = {
+                 class: styleDef.citation["use-preset"] === "ieee" ? "numeric" : 
+                        styleDef.citation["use-preset"].includes("note") ? "footnote" : "author_date",
+                 has_bibliography: !!styleDef.bibliography
+             };
+
+             fetch('/api/v1/preview', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify(mockIntent)
+             })
+             .then(r => r.json())
+             .then(data => {
+                 comprehensivePreview = data;
+             });
         }
     });
 
@@ -327,10 +350,19 @@
                 </div>
             </aside>
 
-    <section class="lg:col-span-8 space-y-8">
+    <section class="lg:col-span-8 space-y-12">
+        <!-- Comprehensive Preview Section -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-8 lg:p-12 shadow-sm">
+            <ComprehensivePreview 
+                previewSet={comprehensivePreview}
+                title="Style Overview"
+                subtitle="High-level look at how {style.name} handles different document parts."
+            />
+        </div>
+
         <div class="flex flex-col gap-6 mb-4">
             <div class="flex items-center justify-between">
-                <h2 class="text-2xl font-black text-slate-950 tracking-tight">Citation stress tests</h2>
+                <h2 class="text-2xl font-black text-slate-950 tracking-tight">Detailed Stress Tests</h2>
                 <div class="text-sm text-slate-500 font-bold">
                     {filteredReferences.length} tests
                 </div>

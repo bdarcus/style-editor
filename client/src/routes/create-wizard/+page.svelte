@@ -1,11 +1,12 @@
 <script lang="ts">
-    import DecisionWizard from '$lib/components/DecisionWizard.svelte';
-    import { intent } from '$lib/stores/intent';
     import LivePreview from '$lib/components/LivePreview.svelte';
-    import type { DecisionPackage } from '$lib/types/bindings';
+    import ComprehensivePreview from '$lib/components/ComprehensivePreview.svelte';
+    import DecisionWizard from '$lib/components/DecisionWizard.svelte';
+    import { onMount } from 'svelte';
+    import { intent } from '$lib/stores/intent';
+    import type { DecisionPackage, Preview } from '$lib/types/bindings';
 
     let currentDecision: DecisionPackage | null = $state(null);
-    let currentPreviewHtml = $derived(currentDecision?.preview_html || "");
 
     function handleDecision(event: CustomEvent<DecisionPackage | null>) {
         currentDecision = event.detail;
@@ -52,63 +53,25 @@
             </div>
         </aside>
 
-        <!-- RIGHT: Live Preview (The "Paper" style) -->
-        <main class="flex-1 bg-slate-100/50 rounded-3xl border border-border-light p-8 lg:p-12 relative overflow-hidden flex flex-col items-center">
-            <div class="bg-white w-full max-w-[700px] min-h-[850px] shadow-2xl p-12 lg:p-16 relative origin-top transition-transform duration-500 font-serif">
-                <div class="absolute top-0 right-0 bg-slate-100 text-slate-400 px-4 py-1.5 text-[10px] font-sans font-black uppercase tracking-widest rounded-bl-xl">
-                    Live Preview
-                </div>
+        <!-- RIGHT: Comprehensive Preview (Inspired by Stitch Screen #4) -->
+        <main class="flex-1 bg-white rounded-3xl border border-border-light shadow-sm p-4 lg:p-8 relative overflow-hidden flex flex-col items-center">
+            <div class="w-full max-w-[800px] flex flex-col gap-12">
+                <ComprehensivePreview 
+                    previewSet={currentDecision ? {
+                        in_text: currentDecision.in_text_preview,
+                        note: currentDecision.note_preview,
+                        bibliography: currentDecision.bibliography_preview
+                    } : null} 
+                />
 
-                <div class="border-b-2 border-slate-900 pb-6 mb-10">
-                    <h2 class="text-3xl font-black text-slate-900 leading-tight mb-4">
-                        The Evolution of Bibliographic Standards in the Digital Age
-                    </h2>
-                    <div class="text-slate-600 italic text-sm">By Jonathan K. Smith and Maria Rodriguez</div>
-                </div>
-
-                <div class="flex flex-col gap-8 text-lg leading-relaxed text-slate-800 text-justify mb-16">
-                    <p>
-                        The rapid proliferation of digital publication platforms has necessitated a re-evaluation of traditional citation metrics.
-                        As transitions in scholarship occur, the role of metadata remains central.
-                    </p>
-
-                    <div class="p-6 bg-slate-50 border border-slate-200 rounded-2xl relative font-sans">
-                        <span class="absolute -top-3 left-6 px-2 bg-white text-[10px] font-black uppercase tracking-widest text-primary border border-slate-200 rounded">Current Style Output</span>
-                        <div class="prose prose-slate max-w-none pt-2">
-                            {#if currentPreviewHtml}
-                                <LivePreview html={currentPreviewHtml} />
-                            {:else}
-                                <p class="text-slate-400 italic">Configure your style to see a preview...</p>
-                            {/if}
-                        </div>
-                    </div>
-
-                    <p>
-                        Furthermore, studies indicate that consistency in tagging improves discoverability. We propose a framework that adapts contextually based on the medium.
+                <!-- About logic -->
+                <div class="mt-8 p-6 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                    <h4 class="text-xs font-black text-blue-900 uppercase tracking-widest mb-2">Technical Insight</h4>
+                    <p class="text-[11px] text-blue-800/70 leading-relaxed">
+                        These previews are generated in real-time using the <strong>CSLN Processor</strong>. 
+                        The formatting matches exactly what will appear in your document editor based on the current logic.
                     </p>
                 </div>
-
-                <div class="mt-12 pt-8 border-t border-slate-200 font-sans">
-                    <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">Preview Metadata</p>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-600">CLASS: {$intent.class || 'PENDING'}</span>
-                        <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-600">
-                            NAME: {$intent.author_format ? ($intent.author_format.et_al ? 'ET AL' : $intent.author_format.form) : 'PENDING'}
-                        </span>
-                        <span class="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-600">BIB: {$intent.has_bibliography ? 'YES' : 'NO'}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Zoom Controls (Mockup styling) -->
-            <div class="absolute bottom-10 flex items-center gap-2 p-1 bg-white/80 backdrop-blur shadow-xl rounded-full border border-border-light font-sans">
-                <button class="size-10 rounded-full flex items-center justify-center text-text-secondary hover:bg-slate-100 transition-colors">
-                    <span class="material-symbols-outlined">zoom_out</span>
-                </button>
-                <span class="text-xs font-bold text-text-main px-2">100%</span>
-                <button class="size-10 rounded-full flex items-center justify-center text-text-secondary hover:bg-slate-100 transition-colors">
-                    <span class="material-symbols-outlined">zoom_in</span>
-                </button>
             </div>
         </main>
     </div>

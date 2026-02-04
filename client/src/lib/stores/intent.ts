@@ -3,7 +3,11 @@ import type { StyleIntent } from '../types/bindings';
 
 const initialState: StyleIntent = {
     base_archetype: null,
+    field: null,
     class: null,
+    citation_preset: null,
+    bibliography_preset: null,
+    detailed_config: null,
     author_format: null,
     has_bibliography: null
 };
