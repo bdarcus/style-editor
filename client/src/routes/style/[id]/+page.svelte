@@ -103,7 +103,7 @@
             return {
                 version: "",
                 info: { title: 'APA' },
-                citation: { "use-preset": "apa" },
+                citation: { "use-preset": "apa", "wrap": "parentheses" },
                 bibliography: { "use-preset": "apa" }
             };
         }
@@ -121,7 +121,7 @@
             return {
                 version: "",
                 info: { title: 'Chicago' },
-                citation: { "use-preset": "chicago-author-date" },
+                citation: { "use-preset": "chicago-author-date", "wrap": "parentheses" },
                 bibliography: { "use-preset": "chicago-author-date" }
             };
         }
@@ -129,7 +129,7 @@
         return {
             version: "",
             info: { title: 'Unknown' },
-            citation: { "use-preset": "apa" },
+            citation: { "use-preset": "apa", "wrap": "parentheses" },
             bibliography: { "use-preset": "apa" }
         };
     }
